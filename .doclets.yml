@@ -1,0 +1,5 @@
+dir: generators/app/lib
+packageJson: package.json
+branches:
+  - doclets
+  - master
