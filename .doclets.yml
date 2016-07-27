@@ -1,4 +1,4 @@
-dir: generators/app/lib
+dir: generators/app
 packageJson: package.json
 branches:
   - doclets

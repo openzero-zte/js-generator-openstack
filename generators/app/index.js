@@ -14,6 +14,10 @@
  * under the License.
  */
 
+/**
+ * generator class
+ */
+
 'use strict';
 
 var yeoman = require('yeoman-generator');
