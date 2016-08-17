@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: component/gerrit.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: component/gerrit.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/*
+ * Copyright (c) 2016 Hewlett Packard Enterprise Development Company, LP
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+/**
+ * gerrit module
+ * @module
+ */
+
+'use strict';
+
+var projectBuilder = require('../project_builder');
+var pkgBuilder = require('../pkg_builder');
+var ini = require('ini');
+var Q = require('q');
+
+var gerritFile = '.gitreview';
+var iniContent;
+var gerritFileExists = false;
+
+/**
+ * Internal helper method. Returns true if gerrit has been enabled.
+ *
+ * @param {String} answers The collection of answers.
+ * @returns {Function} True if enableGerrit is set, otherwise false.
+ */
+var gerritEnabled = function(answers) {
+  return !!answers.enableGerrit;
+};
+
+/**
+ * Initialize the gerrit component of this generator. In this case, we're
+ * only adding default configuration values.
+ *
+ * @param {generator} generator The currently active generator.
+ * @returns {generator} The passed generator, for promise chaining.
+ */
+function init (generator) {
+  // Define our defaults
+  iniContent = {
+    gerrit: {
+      host: 'review.openstack.org',
+      port: '29418',
+      project: 'openstack/test-project.git'
+    }
+  };
+  return generator;
+}
+
+/**
+ * Initialize the gerrit component of this generator. In this case, we're
+ * only adding default configuration values.
+ *
+ * @param {generator} generator The currently active generator.
+ * @returns {generator} The passed generator, for promise chaining.
+ */
+function prompt (generator) {
+
+  // Read the existing file and populate it as defaults.
+  if (generator.fs.exists(gerritFile)) {
+    gerritFileExists = true;
+    iniContent = ini.parse(generator.fs.read(gerritFile));
+  } else {
+    // Create project name from package name if gerrit file does not exist
+    var projectName = pkgBuilder.getValue("name");
+    iniContent.gerrit.project = 'openstack/' + projectName + '.git';
+  }
+
+  var deferred = Q.defer();
+
+  if (!generator.options['non-interactive']) {
+    // Go through the prompts.
+    generator.prompt(
+      [{
+        type: 'confirm',
+        name: 'enableGerrit',
+        message: 'Gerrit- Enable:',
+        default: gerritFileExists
+      }, {
+        when: gerritEnabled,
+        type: 'input',
+        name: 'gerritHost',
+        message: 'Gerrit- Host:',
+        default: iniContent.gerrit.host
+      }, {
+        when: gerritEnabled,
+        type: 'input',
+        name: 'gerritPort',
+        message: 'Gerrit- Port:',
+        default: iniContent.gerrit.port
+      }, {
+        when: gerritEnabled,
+        type: 'input',
+        name: 'gerritProject',
+        message: 'Gerrit- Project Path:',
+        default: iniContent.gerrit.project
+      }],
+      function(answers) {
+        gerritFileExists = answers.enableGerrit;
+        iniContent.gerrit = {
+          host: answers.gerritHost,
+          port: answers.gerritPort,
+          project: answers.gerritProject
+        };
+        deferred.resolve(generator);
+      });
+  } else {
+    deferred.resolve(generator);
+  }
+  return deferred.promise;
+}
+
+/**
+ * Configure gerrit
+ *
+ * @param {generator} generator The currently active generator.
+ * @returns {generator} The passed generator, for promise chaining.
+ */
+function configure (generator) {
+  if (gerritFileExists) {
+    projectBuilder.writeFile(gerritFile, buildGerritFile);
+  } else {
+    projectBuilder.removeFile(gerritFile);
+  }
+
+  return generator;
+}
+
+function buildGerritFile () {
+  return ini.stringify(iniContent);
+}
+
+module.exports = {
+  /** @see {@link module:component/gerrit~init} */
+  init: init,
+  /** @see {@link module:component/gerrit~prompt} */
+  prompt: prompt,
+  /** @see {@link module:component/gerrit~configure} */
+  configure: configure
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-component_editorconfig.html">component/editorconfig</a></li><li><a href="module-component_eslint.html">component/eslint</a></li><li><a href="module-component_gerrit.html">component/gerrit</a></li><li><a href="module-component_gitignore.html">component/gitignore</a></li><li><a href="module-component_license.html">component/license</a></li><li><a href="module-component_nsp.html">component/nsp</a></li><li><a href="module-component_pkg.html">component/pkg</a></li><li><a href="module-component_structure.html">component/structure</a></li><li><a href="module-global_dependencies.html">global_dependencies</a></li><li><a href="module-pkg_builder.html">pkg_builder</a></li><li><a href="module-project_builder.html">project_builder</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Aug 17 2016 10:19:07 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
